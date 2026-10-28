@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Altangerel — Portfolio</title>
+
+<!-- apply saved/system theme before paint (no flash) -->
+<script>
+  try {
+    var t = localStorage.getItem("theme") ||
+      (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", t);
+  } catch (e) { document.documentElement.setAttribute("data-theme", "dark"); }
+</script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --card:rgba(10,40,80,.50); --line:rgba(255,255,255,.18); --glow:rgba(255,170,90,.35); --scrim:rgba(4,16,36,.55); }
+  html[data-theme="dark"] { --card:rgba(4,8,18,.78); --line:rgba(255,255,255,.10); --glow:rgba(120,150,255,.30); --scrim:rgba(0,0,6,.55); }
+
+  html { scroll-behavior: smooth; background:#05080f; }
+  body { font-family:'Inter',sans-serif; color:#e6edf7; background:transparent; }
+  .font-display { font-family:'Space Grotesk',sans-serif; }
+  .reveal { opacity:0; transform:translateY(48px); }
+
+  /* fixed ocean + sky behind the whole page */
+  #sea { position:fixed; inset:0; width:100%; height:100%; z-index:-2;
+    background:linear-gradient(#0a1a33 0%,#d98a4e 40%,#0b3a5a 41%,#04141f 100%); }
+  #scrim { position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:0; background:var(--scrim); transition:background .6s ease; }
+
+  /* ship dims at night */
+  #ship { transition:filter .8s ease; }
+  html[data-theme="dark"] #ship { filter:brightness(.55) saturate(.85); }
+
+  .panel { background:var(--card); border:1px solid var(--line); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); transition:background .6s ease, border-color .6s ease; }
+
+  .tilt { transform-style:preserve-3d; transition:transform .15s ease-out; position:relative; border-radius:1rem; padding:1px; }
+  .tilt::before { content:""; position:absolute; inset:0; border-radius:1rem; opacity:0; transition:opacity .3s;
+    background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%), rgba(56,189,248,.6), transparent 70%); }
+  .tilt:hover::before { opacity:1; }
+  .tilt > .inner { position:relative; height:100%; border-radius:1rem; background:var(--card); border:1px solid var(--line);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); padding:1.5rem; transition:background .6s ease; }
+
+  .chip { transition:transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s, border-color .25s; }
+  .chip:hover { transform:translateY(-4px) scale(1.08); border-color:#38bdf8; box-shadow:0 0 20px rgba(56,189,248,.35); }
+  .field { width:100%; border-radius:.75rem; border:1px solid var(--line); background:rgba(255,255,255,.07); padding:.75rem 1rem; outline:none; transition:.2s; color:#fff; }
+  .field::placeholder { color:rgba(255,255,255,.5); }
+  .field:focus { border-color:#38bdf8; box-shadow:0 0 20px rgba(56,189,248,.3); }
+  .kicker { font-size:.8rem; letter-spacing:.3em; text-transform:uppercase; color:#38bdf8; margin-bottom:.5rem; text-shadow:0 1px 10px rgba(0,0,0,.5); }
+  section h2, section h3 { text-shadow:0 2px 18px rgba(0,0,0,.35); }
+
+  #portraitBox { box-shadow:0 0 90px var(--glow); }
+
+  /* theme toggle */
+  #themeToggle { display:grid; place-items:center; width:2rem; height:2rem; border-radius:9999px; cursor:pointer;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1), background .2s; }
+  #themeToggle:hover { transform:rotate(25deg) scale(1.15); background:rgba(255,255,255,.15); }
+
+  /* square school photos */
+  .photo-sq { position:relative; aspect-ratio:1/1; width:100%; overflow:hidden; border-radius:1rem;
+    border:1px dashed var(--line); background:var(--card); display:grid; place-items:center; text-align:center;
+    font-size:.75rem; color:rgba(255,255,255,.55); line-height:1.3; }
+  .photo-sq span { display:block; font-size:1.75rem; margin-bottom:.25rem; }
+  .photo-sq img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .6s ease; }
+  .photo-sq:hover img { transform:scale(1.07); }
+  /* skill bars */
+.bar { height:.5rem; border-radius:9999px; background:rgba(255,255,255,.1); overflow:hidden; }
+.bar > i { display:block; height:100%; width:0; border-radius:9999px; background:linear-gradient(90deg,#38bdf8,#818cf8); }
+</style>
+</head>
+<body>
+
+<!-- fixed background layers -->
+<canvas id="sea"></canvas>
+<div id="scrim"></div>
+
+<!-- NAV -->
+<nav class="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
+  <ul class="flex items-center gap-1 rounded-full border border-white/10 bg-black/40 px-2 py-1.5 text-sm backdrop-blur-md">
+    <li><a href="#about" class="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">About</a></li>
+    <li><a href="#projects" class="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">Projects</a></li>
+    <li><a href="#achievements" class="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">Awards</a></li>
+    <li><a href="#skills" class="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">Skills</a></li>
+    <li><a href="#strengths" class="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">Strengths</a></li>
+    <li><a href="#contact" class="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">Contact</a></li>
+    <li><button id="themeToggle" type="button" aria-label="Toggle day/night mode" title="Toggle day/night mode">🌙</button></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero" class="relative h-screen w-full overflow-hidden">
+
+  <!-- Yamato -->
+  <div id="ship" class="absolute" style="width:min(88vw,1400px)">
+    <div id="bob" style="position:relative">
+      <img id="realShip" src="images/yamato.png" alt="Battleship Yamato" style="display:none;width:100%;filter:drop-shadow(0 20px 30px rgba(0,0,0,.5))" />
+      <svg id="yamatoSvg" viewBox="0 0 1200 560" class="block w-full" style="overflow:visible" aria-label="Battleship Yamato">
+        <defs>
+          <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#44505f"/><stop offset=".35" stop-color="#232b37"/><stop offset="1" stop-color="#0b0f15"/>
+          </linearGradient>
+          <linearGradient id="sup" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3a4554"/><stop offset="1" stop-color="#171d27"/>
+          </linearGradient>
+          <linearGradient id="wake" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="fade" gradientUnits="userSpaceOnUse" x1="0" y1="300" x2="0" y2="440">
+            <stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/>
+          </linearGradient>
+          <mask id="rm" maskUnits="userSpaceOnUse" x="-300" y="300" width="1900" height="260">
+            <rect x="-300" y="300" width="1900" height="260" fill="url(#fade)"/>
+          </mask>
+          <filter id="b2" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+          <filter id="b8" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+          <filter id="bR" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2 5"/></filter>
+
+          <g id="shipG" stroke="#7d8fa8" stroke-opacity=".45" stroke-width=".8">
+            <!-- barrels -->
+            <g stroke="#10151d" stroke-width="6" stroke-linecap="round" stroke-opacity="1">
+              <line x1="186" y1="204" x2="92" y2="192"/><line x1="188" y1="211" x2="90" y2="203"/>
+              <line x1="308" y1="186" x2="214" y2="170"/><line x1="310" y1="194" x2="210" y2="181"/>
+              <line x1="978" y1="197" x2="1070" y2="208"/><line x1="976" y1="205" x2="1066" y2="217"/>
+            </g>
+            <!-- hull -->
+            <path fill="url(#hull)" d="M28 212 L60 258 L96 300 L1150 300 L1184 240 L1110 233 L900 238 L420 232 L132 224 Z"/>
+            <path d="M40 232 L1170 252" stroke="#000" stroke-opacity=".25" stroke-width="2" fill="none"/>
+            <!-- stern flight deck -->
+            <rect x="1000" y="224" width="150" height="12" fill="url(#sup)"/>
+            <!-- casemates -->
+            <g fill="url(#sup)">
+              <rect x="410" y="216" width="14" height="16"/><rect x="432" y="216" width="14" height="16"/><rect x="454" y="216" width="14" height="16"/><rect x="476" y="214" width="14" height="18"/>
+              <rect x="740" y="216" width="14" height="22"/><rect x="822" y="218" width="14" height="20"/><rect x="846" y="218" width="14" height="20"/>
+              <rect x="1000" y="206" width="6" height="18"/><rect x="1060" y="200" width="3" height="24"/>
+            </g>
+            <!-- turret A -->
+            <path fill="url(#sup)" d="M178 224 L184 198 Q220 186 262 198 L268 224 Z"/>
+            <!-- turret B (super-firing) -->
+            <path fill="url(#sup)" d="M296 232 L300 204 L384 204 L388 232 Z"/>
+            <path fill="url(#sup)" d="M300 204 L306 176 Q342 164 384 176 L390 204 Z"/>
+            <!-- pagoda tower -->
+            <g fill="url(#sup)">
+              <rect x="500" y="190" width="130" height="44"/><rect x="494" y="188" width="142" height="4"/>
+              <rect x="512" y="160" width="104" height="30"/><rect x="506" y="158" width="116" height="4"/>
+              <rect x="522" y="134" width="84" height="26"/><rect x="516" y="132" width="96" height="4"/>
+              <rect x="530" y="112" width="66" height="22"/><rect x="524" y="110" width="78" height="4"/>
+              <rect x="538" y="94" width="50" height="18"/><rect x="532" y="92" width="62" height="4"/>
+              <rect x="546" y="78" width="34" height="16"/>
+            </g>
+            <g stroke="#10151d" stroke-opacity="1">
+              <line x1="563" y1="78" x2="563" y2="28" stroke-width="3"/><line x1="548" y1="46" x2="578" y2="46" stroke-width="2"/>
+              <line x1="563" y1="28" x2="470" y2="150" stroke-width="1" stroke-opacity=".5"/>
+              <line x1="563" y1="28" x2="780" y2="120" stroke-width="1" stroke-opacity=".5"/>
+            </g>
+            <!-- funnel -->
+            <path fill="url(#sup)" d="M655 232 L672 148 L716 156 L722 232 Z"/>
+            <path fill="#0a0d12" d="M672 148 L716 156 L715 164 L670 156 Z"/>
+            <!-- main mast + turret C -->
+            <path fill="url(#sup)" d="M772 232 L778 120 L790 120 L796 232 Z"/>
+            <rect x="764" y="132" width="40" height="4" fill="url(#sup)"/>
+            <path fill="url(#sup)" d="M890 238 L894 214 L984 214 L988 238 Z"/>
+            <path fill="url(#sup)" d="M896 214 L902 188 Q940 178 978 190 L984 214 Z"/>
+            <!-- deck rail -->
+            <line x1="140" y1="222" x2="1100" y2="231" stroke="#9fb0c6" stroke-opacity=".35"/>
+          </g>
+        </defs>
+
+        <!-- reflection -->
+        <g mask="url(#rm)" opacity=".4"><g filter="url(#bR)"><use href="#shipG" transform="translate(0,600) scale(1,-1)"/></g></g>
+        <!-- ship -->
+        <use href="#shipG"/>
+        <!-- smoke -->
+        <g id="smoke" filter="url(#b8)"></g>
+        <!-- foam + wake -->
+        <path d="M60 300 Q400 307 700 300 T1180 301" stroke="#fff" stroke-opacity=".4" stroke-width="5" fill="none" filter="url(#b2)"/>
+        <ellipse cx="108" cy="298" rx="75" ry="9" fill="#fff" fill-opacity=".7" filter="url(#b2)"/>
+        <path d="M1150 296 L1560 292 L1560 318 L1150 304 Z" fill="url(#wake)" opacity=".6" filter="url(#b2)"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="heroText" class="absolute inset-x-0 z-10 px-6 text-center" style="top:12%; text-shadow:0 2px 24px rgba(0,0,0,.45)">
+    <p class="kicker" style="letter-spacing:.4em; color:#ffd9a8">Portfolio</p>
+    <h1 class="font-display text-5xl font-bold leading-tight md:text-7xl">Altangerel</h1>
+    <p class="mx-auto mt-4 max-w-xl text-lg text-white/85 md:text-xl">Student of OctoLearn.</p>
+    <p class="mt-2 text-white/70">Student • Developer • Physics & Coding enthusiast</p>
+    <p class="mt-8 text-xs uppercase tracking-widest text-white/60">Scroll ↓</p>
+  </div>
+
+  <div id="portrait" class="absolute inset-0 z-20 flex flex-col items-center justify-center" style="opacity:0">
+    <div id="portraitBox" class="relative overflow-hidden rounded-3xl border border-white/15 bg-white/5" style="height:min(64vh,640px); aspect-ratio:2/3; max-width:88vw;">
+     <img src="Desktop/me.png" alt="Altangerel" class="w-full h-full object-cover">
+    </div>
+    <div id="portraitText" class="mt-6 text-center" style="opacity:0">
+      <h2 class="font-display text-3xl font-semibold">Hello, I’m Altangerel.</h2>
+      <p class="mt-1 text-white/60">Steady course. Full speed ahead.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="mx-auto max-w-5xl px-6 py-32">
+  <div class="reveal mb-14"><p class="kicker">About</p><h2 class="font-display text-4xl font-bold md:text-5xl">Education & Journey</h2></div>
+  <div class="reveal mb-14 flex flex-wrap gap-3">
+    <span class="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-1.5 text-sm text-sky-300">Coding</span>
+    <span class="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-1.5 text-sm text-sky-300">Physics</span>
+    <span class="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-1.5 text-sm text-sky-300">Chemistry</span>
+    <span class="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-1.5 text-sm text-sky-300">English</span>
+    <span class="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-1.5 text-sm text-sky-300">Mongolian & English</span>
+  </div>
+
+  <div class="relative border-l border-white/20 pl-8">
+
+    <div class="reveal relative mb-14">
+      <span class="absolute top-1.5 h-4 w-4 rounded-full bg-sky-400" style="left:-41px; box-shadow:0 0 18px rgba(56,189,248,.9)"></span>
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div class="flex-1">
+          <p class="text-sm text-sky-300">2026 — Present</p>
+          <h3 class="font-display text-2xl font-semibold">OctoLearn London School</h3>
+          <p class="text-white/60">The Language School</p>
+          <p class="mt-2 max-w-2xl text-white/75">Focus on software engineering, algorithms and security.</p>
+        </div>
+        <div class="w-40 shrink-0 sm:w-44">
+          <div class="photo-sq"><div><span>📷</span>Add school photo</div>
+            <img src="Desktop/images.png" alt="OctoLearn London School" onerror="this.style.display='none'" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal relative mb-14">
+      <span class="absolute top-1.5 h-4 w-4 rounded-full bg-sky-400" style="left:-41px; box-shadow:0 0 18px rgba(56,189,248,.9)"></span>
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div class="flex-1">
+          <p class="text-sm text-sky-300">2022 — 2026</p>
+          <h3 class="font-display text-2xl font-semibold">Erkhet Erdem school</h3>
+          <p class="text-white/60">Math School of Mongolia</p>
+          <p class="mt-2 max-w-2xl text-white/75">Studied Physics, Math, English and computer science.</p>
+        </div>
+        <div class="w-40 shrink-0 sm:w-44">
+          <div class="photo-sq"><div><span>📷</span>Add school photo</div>
+            <img src="Desktop/images.jpeg" alt="Erkhet Erdem school" onerror="this.style.display='none'" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal relative">
+      <span class="absolute top-1.5 h-4 w-4 rounded-full bg-sky-400" style="left:-41px; box-shadow:0 0 18px rgba(56,189,248,.9)"></span>
+      <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div class="flex-1">
+          <p class="text-sm text-sky-300">2015 — 2022</p>
+          <h3 class="font-display text-2xl font-semibold">Public School</h3>
+          <p class="text-white/60">Mongolia</p>
+          <p class="mt-2 max-w-2xl text-white/75">Graduated Compulsory Education</p>
+        </div>
+        <div class="w-40 shrink-0 sm:w-44">
+          <div class="photo-sq"><div><span>📷</span>Add school photo</div>
+            <img src="Desktop/images-1.png" alt="Public School" onerror="this.style.display='none'" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects" class="mx-auto max-w-6xl px-6 py-32">
+  <div class="reveal mb-14"><p class="kicker">Works</p><h2 class="font-display text-4xl font-bold md:text-5xl">Selected Projects</h2></div>
+  <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+    <div class="reveal tilt"><div class="inner">
+      <div class="mb-5 aspect-video overflow-hidden rounded-xl bg-white/5"><img src="Desktop/509350143_1351555956974728_6401001372092623629_n.jpg" class="h-full w-full object-cover" onerror="this.style.display='none'" /></div>
+      <h3 class="font-display text-xl font-semibold">Erkhet Erdem school Page</h3>
+      <p class="mt-2 text-sm text-white/65">First website for Erkhet Erdem school done by me.</p>
+      <div class="mt-4 flex flex-wrap gap-2"><span class="rounded-md bg-white/10 px-2 py-1 text-xs text-white/75">HTML</span><span class="rounded-md bg-white/10 px-2 py-1 text-xs text-white/75">Java</span></div>
+      <div class="mt-5 flex gap-4 text-sm"><a href="#" class="text-sky-300 hover:underline">Live ↗</a><a href="#" class="text-white/70 hover:text-white">GitHub</a></div>
+    </div></div>
+    <div class="reveal tilt"><div class="inner">
+      <div class="mb-5 aspect-video overflow-hidden rounded-xl bg-white/5"><img src="Desktop/0*Podw3y7IfLdo_WLM.jpg" class="h-full w-full object-cover" onerror="this.style.display='none'" /></div>
+      <h3 class="font-display text-xl font-semibold">Experiment</h3>
+      <p class="mt-2 text-sm text-white/65">A first experiment of python coding.</p>
+      <div class="mt-4 flex flex-wrap gap-2"><span class="rounded-md bg-white/10 px-2 py-1 text-xs text-white/75">Python</span><span class="rounded-md bg-white/10 px-2 py-1 text-xs text-white/75">Programiz</span></div>
+      <div class="mt-5 flex gap-4 text-sm"><a href="#" class="text-white/70 hover:text-white">GitHub</a></div>
+    </div></div>
+    <div class="reveal tilt"><div class="inner">
+      <div class="mb-5 aspect-video overflow-hidden rounded-xl bg-white/5"><img src="Desktop/preview.webp" class="h-full w-full object-cover" onerror="this.style.display='none'" /></div>
+      <h3 class="font-display text-xl font-semibold">Design Technology Project</h3>
+      <p class="mt-2 text-sm text-white/65">A creative house modern house design (exterior) and its surrounding environment.</p>
+      <div class="mt-4 flex flex-wrap gap-2"><span class="rounded-md bg-white/10 px-2 py-1 text-xs text-white/75">Carton paper</span><span class="rounded-md bg-white/10 px-2 py-1 text-xs text-white/75">Glue gun</span></div>
+      <div class="mt-5 flex gap-4 text-sm"><a href="#" class="text-sky-300 hover:underline">Google ↗</a><a href="#" class="text-white/70 hover:text-white">YouTube</a></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ACHIEVEMENTS -->
+<section id="achievements" class="mx-auto max-w-6xl px-6 py-32">
+  <div class="reveal mb-14"><p class="kicker">Milestones</p><h2 class="font-display text-4xl font-bold md:text-5xl">Achievements</h2></div>
+  <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">🏅</div><h3 class="font-display text-lg font-semibold">Scholarship</h3><p class="mt-2 text-sm text-white/65">Awarded for academic excellence.</p></div></div>
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">📜</div><h3 class="font-display text-lg font-semibold">Certification</h3><p class="mt-2 text-sm text-white/65">Kangaroo, Caligraphy, IMAS, </p></div></div>
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">🏆</div><h3 class="font-display text-lg font-semibold">Competition</h3><p class="mt-2 text-sm text-white/65">Math, Chemistry, Mongolian Caligraphy, Physics, Literature olympiad achievements 2-4th places.</p></div></div>
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">📈</div><h3 class="font-display text-lg font-semibold">Test Score</h3><p class="mt-2 text-sm text-white/65">JLPT N5, Mongolian language 735.</p></div></div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills" class="mx-auto max-w-6xl px-6 py-32">
+  <div class="reveal mb-14"><p class="kicker">Languages</p><h2 class="font-display text-4xl font-bold md:text-5xl">Foreign Languages</h2></div>
+  <div class="grid gap-8 md:grid-cols-2">
+    <div class="reveal panel rounded-2xl p-6"><h3 class="font-display mb-4 text-lg font-semibold text-sky-300">Russian</h3>
+      <div class="flex flex-wrap gap-3"><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">studied for 2 years</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">A2 level</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">здороваться</span></div></div>
+    <div class="reveal panel rounded-2xl p-6"><h3 class="font-display mb-4 text-lg font-semibold text-sky-300">Chinese (Mandarin)</h3>
+      <div class="flex flex-wrap gap-3"><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">studied for 2 years</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">HSK 3</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">你好</span></div></div>
+    <div class="reveal panel rounded-2xl p-6"><h3 class="font-display mb-4 text-lg font-semibold text-sky-300">Japanese(Katakana/Hiragana/Kanji)</h3>
+      <div class="flex flex-wrap gap-3"><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">studied for a year</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">N5 level</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">こんにちは</span></div></div>
+    <div class="reveal panel rounded-2xl p-6"><h3 class="font-display mb-4 text-lg font-semibold text-sky-300">Korean</h3>
+      <div class="flex flex-wrap gap-3"><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">studying-present</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">A0 level</span><span class="chip rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm">안녕하세요</span></div></div>
+  </div>
+</section>
+<!-- STRENGTHS / SKILLS -->
+<section id="strengths" class="mx-auto max-w-6xl px-6 py-32">
+  <div class="reveal mb-14"><p class="kicker">Strengths</p><h2 class="font-display text-4xl font-bold md:text-5xl">Skills & Advantages</h2></div>
+
+  <!-- advantage cards -->
+  <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">⚡</div><h3 class="font-display text-lg font-semibold">Fast learner</h3><p class="mt-2 text-sm text-white/65">Picks up new tools and languages quickly.</p></div></div>
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">🧠</div><h3 class="font-display text-lg font-semibold">Problem solving</h3><p class="mt-2 text-sm text-white/65">Math and physics training helps me break problems down.</p></div></div>
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">🌍</div><h3 class="font-display text-lg font-semibold">Multilingual</h3><p class="mt-2 text-sm text-white/65">Mongolian, English and four more languages.</p></div></div>
+    <div class="reveal tilt"><div class="inner"><div class="mb-3 text-3xl">🤝</div><h3 class="font-display text-lg font-semibold">Teamwork</h3><p class="mt-2 text-sm text-white/65">Works well with others to achieve common goals.</p></div></div>
+  </div>
+
+  <!-- skill bars -->
+  <div class="reveal panel mt-12 rounded-2xl p-6 md:p-8">
+    <h3 class="font-display mb-6 text-lg font-semibold text-sky-300">Technical skills</h3>
+    <div class="grid gap-x-10 gap-y-6 md:grid-cols-2">
+      <div><div class="mb-2 flex justify-between text-sm"><span>HTML / CSS</span><span class="text-white/60">80%</span></div><div class="bar"><i data-w="80"></i></div></div>
+      <div><div class="mb-2 flex justify-between text-sm"><span>Python</span><span class="text-white/60">65%</span></div><div class="bar"><i data-w="65"></i></div></div>
+      <div><div class="mb-2 flex justify-between text-sm"><span>JavaScript</span><span class="text-white/60">60%</span></div><div class="bar"><i data-w="60"></i></div></div>
+      <div><div class="mb-2 flex justify-between text-sm"><span>Physics</span><span class="text-white/60">85%</span></div><div class="bar"><i data-w="85"></i></div></div>
+    </div>
+  </div>
+</section>
+<!-- CONTACT -->
+<section id="contact" class="mx-auto max-w-5xl px-6 py-32">
+  <div class="reveal mb-14"><p class="kicker">Contact</p><h2 class="font-display text-4xl font-bold md:text-5xl">Let’s work together</h2></div>
+  <div class="grid gap-12 md:grid-cols-2">
+    <div class="reveal">
+      <p class="mb-6 text-white/75">Have a project, an opportunity, or just want to say hi? My inbox is open.</p>
+      <a href="mailto:you@example.com" class="mb-8 inline-block text-sky-300 hover:underline">✉ you@example.com</a>
+      <div class="flex gap-3">
+        <a href="https://github.com/yourname" target="_blank" class="chip rounded-full border border-white/20 px-4 py-2 text-sm">GitHub</a>
+        <a href="https://linkedin.com/in/yourname" target="_blank" class="chip rounded-full border border-white/20 px-4 py-2 text-sm">LinkedIn</a>
+        <a href="https://discord.com/users/your-id" target="_blank" class="chip rounded-full border border-white/20 px-4 py-2 text-sm">Discord</a>
+      </div>
+    </div>
+    <form id="form" class="reveal space-y-4">
+      <input name="name" required placeholder="Your name" class="field" />
+      <input name="email" type="email" required placeholder="Your email" class="field" />
+      <textarea name="message" required rows="5" placeholder="Message" class="field"></textarea>
+      <button type="submit" class="rounded-xl bg-sky-400 px-6 py-3 font-medium text-[#05080f] transition hover:brightness-110 active:scale-95">Send message</button>
+    </form>
+  </div>
+</section>
+
+<footer class="border-t border-white/15 py-8 text-center text-sm text-white/50">
+  © <span id="year"></span> Altangerel. All rights reserved.
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+document.getElementById("year").textContent = new Date().getFullYear();
+
+/* ---------- DAY / NIGHT ---------- */
+let skyTarget = 1;                       // 0 = day, 1 = night
+const root = document.documentElement;
+const toggleBtn = document.getElementById("themeToggle");
+function applyTheme(theme, save) {
+  root.setAttribute("data-theme", theme);
+  skyTarget = theme === "dark" ? 1 : 0;
+  toggleBtn.textContent = theme === "dark" ? "🌙" : "☀️";
+  if (save) { try { localStorage.setItem("theme", theme); } catch (e) {} }
+}
+applyTheme(root.getAttribute("data-theme") || "dark", false);
+toggleBtn.addEventListener("click", () =>
+  applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark", true));
+
+/* ---------- FIXED OCEAN + SKY (sun ⇄ moon) ---------- */
+(() => {
+  const c = document.getElementById("sea");
+  const gl = c.getContext("webgl", { antialias:false });
+  if (!gl) return;
+  const FS = `
+precision highp float;
+uniform vec2 r; uniform float t; uniform float n; // n: 0 = day, 1 = night
+const float HOR = .60;
+float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float noise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x), mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x), f.y); }
+float fbm(vec2 p){ float a=.5,s=0.; for(int i=0;i<5;i++){ s+=a*noise(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; }
+float waves(vec2 p){ return fbm(p+vec2(t*.25,t*.10)) + .5*fbm(p*2.1+vec2(-t*.3,t*.15)); }
+
+vec3 sky(vec2 uv){
+  float asp=r.x/r.y;
+  float y=max(uv.y-HOR,0.)/(1.-HOR);
+
+  // gradient: bright warm-blue day  ->  deep navy night
+  vec3 hc=mix(vec3(.95,.82,.62), vec3(.10,.14,.30), n);
+  vec3 mc=mix(vec3(.40,.62,.92), vec3(.03,.06,.16), n);
+  vec3 zc=mix(vec3(.08,.28,.68), vec3(.01,.02,.07), n);
+  vec3 c=mix(hc,mc,smoothstep(0.,.25,y)); c=mix(c,zc,smoothstep(.15,1.,y));
+
+  vec2 sp=vec2(.72,HOR+.10);
+  vec2 q=(uv-sp)*vec2(asp,1.);
+  float sd=length(q);
+
+  // SUN (day)
+  c+=vec3(1.,.78,.45)*exp(-sd*3.5)*.8*(1.-n);
+  c+=vec3(1.,.97,.85)*smoothstep(.037,.022,sd)*2.*(1.-n);
+
+  // MOON (night): soft halo + disc with craters
+  c+=vec3(.50,.62,.95)*exp(-sd*5.)*.40*n;
+  float disc=smoothstep(.040,.036,sd);
+  float crat=.80+.20*fbm(q*38.);
+  vec3 moonCol=vec3(.93,.95,1.)*crat;
+  c=mix(c, moonCol, disc*n);
+
+  // STARS (night)
+  vec2 g=uv*vec2(asp,1.)*95.; float s=hash(floor(g));
+  float star=step(.985,s)*smoothstep(0.,.3,y)*(.5+.5*sin(t*2.+s*60.));
+  c+=vec3(star)*n;
+
+  // clouds
+  float cl=smoothstep(.45,.8,fbm(vec2(uv.x*2.5+t*.01, y*7.)))*smoothstep(0.,.1,y)*(1.-smoothstep(.5,1.,y));
+  vec3 cc=mix(mix(vec3(1.,.88,.72),vec3(.70,.78,.95),y*1.5), vec3(.12,.16,.30), n);
+  c=mix(c, cc, cl*mix(.55,.25,n));
+  return c;
+}
+
+void main(){
+  vec2 uv=gl_FragCoord.xy/r; float asp=r.x/r.y; vec3 col;
+  if(uv.y>=HOR){ col=sky(uv); }
+  else {
+    float d=HOR-uv.y;
+    float z=1./(d+.015);
+    vec2 p=vec2((uv.x-.5)*asp*z*.9, z*1.2);
+    float e=.03, h0=waves(p);
+    float hx=waves(p+vec2(e,0.))-h0, hz=waves(p+vec2(0.,e))-h0;
+    float k=2.2/(1.+z*.12)*.35;
+    vec3 nn=normalize(vec3(-hx/e*k,1.,-hz/e*k));
+    vec2 ruv=vec2(uv.x-nn.x*.15, HOR+clamp(d*.8+nn.z*.1,0.,1.));
+    vec3 refl=sky(ruv);
+    float fres=.12+.88*pow(1.-clamp(d*2.2+.05,0.,1.),2.5);
+    float diff=clamp(dot(nn,normalize(vec3(.4,.7,-.3))),0.,1.);
+    vec3 bodyD=mix(vec3(.03,.20,.36),vec3(.10,.45,.62),diff)+vec3(.25,.12,.04)*diff*.25;
+    vec3 bodyN=mix(vec3(.01,.04,.09),vec3(.04,.12,.22),diff);
+    vec3 body=mix(bodyD,bodyN,n);
+    col=mix(body,refl,fres);
+    float cap=smoothstep(1.,1.2,h0)*smoothstep(.1,.4,d);
+    col+=vec3(.85,.9,.95)*cap*mix(.40,.25,n);
+    // sun / moon glitter on the water
+    float lightX=exp(-pow((uv.x-.72)*asp*2.2,2.));
+    float sparkle=smoothstep(.75,.95,noise(p*5.+vec2(t*.6,0.)))*lightX;
+    col+=mix(vec3(1.,.85,.6),vec3(.70,.80,1.),n)*sparkle*mix(.9,.65,n)*(1.-fres*.5);
+    vec3 haze=mix(vec3(1.,.72,.45)*.9, vec3(.06,.10,.22), n);
+    col=mix(col,haze,exp(-d*14.)*.8);
+  }
+  col*=1.-mix(.3,.7,n)*dot(uv-.5,uv-.5);
+  gl_FragColor=vec4(clamp(col,0.,1.),1.);
+}`;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, "attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}"));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(prog)); return; }
+  gl.useProgram(prog);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, "a");
+  gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const uR = gl.getUniformLocation(prog, "r"), uT = gl.getUniformLocation(prog, "t"), uN = gl.getUniformLocation(prog, "n");
+  const scale = Math.min(window.devicePixelRatio || 1, 1.5) * .8;
+  const resize = () => { c.width = c.clientWidth * scale; c.height = c.clientHeight * scale; gl.viewport(0,0,c.width,c.height); };
+  resize(); addEventListener("resize", resize);
+  let cur = skyTarget;
+  const loop = ms => {
+    cur += (skyTarget - cur) * 0.06;          // smooth fade day ⇄ night
+    if (!document.hidden) {
+      gl.uniform2f(uR, c.width, c.height);
+      gl.uniform1f(uT, ms * .001);
+      gl.uniform1f(uN, cur);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+})();
+
+/* ---------- SHIP ---------- */
+const shipEl = document.getElementById("ship");
+const real = document.getElementById("realShip");
+let realOK = false;
+function placeShip() {
+  const w = shipEl.offsetWidth, wl = innerHeight * 0.68;
+  shipEl.style.left = (innerWidth - w) / 2 + "px";
+  shipEl.style.top = (realOK ? wl - real.offsetHeight : wl - w * 300 / 1200) + "px";
+}
+real.onload = () => { realOK = true; real.style.display = "block"; document.getElementById("yamatoSvg").style.display = "none"; placeShip(); ScrollTrigger.refresh(); };
+addEventListener("resize", placeShip); placeShip();
+
+const smoke = document.getElementById("smoke");
+for (let i = 0; i < 10; i++) {
+  const ci = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  ci.setAttribute("fill", "#2a313b"); smoke.appendChild(ci);
+  gsap.fromTo(ci, { attr:{ cx:694, cy:146, r:8 }, opacity:.55 },
+    { attr:{ cx:694 + 380 + Math.random()*80, cy:70 + Math.random()*40, r:42 }, opacity:0, duration:5, ease:"none", repeat:-1, delay:i*.5 });
+}
+
+gsap.to("#bob", { y:6, rotation:.4, duration:3, ease:"sine.inOut", yoyo:true, repeat:-1 });
+gsap.from("#heroText > *", { opacity:0, y:40, duration:1.1, stagger:.15, ease:"power3.out", delay:.2 });
+
+/* ---------- HERO SCROLL TIMELINE ---------- */
+gsap.timeline({
+  scrollTrigger: { trigger:"#hero", start:"top top", end:"+=200%", scrub:1, pin:true, anticipatePin:1 }
+})
+  .to("#ship", { xPercent:-140, ease:"power2.inOut", duration:1 }, 0)
+  .to("#heroText", { opacity:0, y:-80, ease:"power1.in", duration:.5 }, 0)
+  .fromTo("#portrait", { xPercent:120, scale:.6, opacity:0 }, { xPercent:0, scale:1, opacity:1, ease:"power3.out", duration:1 }, .35)
+  .fromTo("#portraitText", { opacity:0, y:40 }, { opacity:1, y:0, duration:.5 }, 1);
+
+/* scrim fades in while the hero scrolls, so content stays readable over the ocean */
+gsap.to("#scrim", {
+  opacity:1, ease:"none",
+  scrollTrigger: { trigger:"#hero", start:"top top", end:"+=200%", scrub:true }
+});
+/* skill bars fill when scrolled into view */
+gsap.utils.toArray(".bar > i").forEach(b => {
+  gsap.fromTo(b, { width:0 }, { width:b.dataset.w + "%", duration:1.4, ease:"power3.out",
+    scrollTrigger:{ trigger:b, start:"top 92%", once:true } });
+});
+/* ---------- REVEALS / TILT / FORM ---------- */
+gsap.utils.toArray(".reveal").forEach((el, i) => {
+  gsap.to(el, {
+    opacity:1, y:0, duration:1.1, ease:"back.out(1.4)", delay:(i % 4) * .05,
+    scrollTrigger: { trigger: el, start:"top 88%", once:true }
+  });
+});
+
+document.querySelectorAll(".tilt").forEach(card => {
+  card.addEventListener("mousemove", e => {
+    const r = card.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    card.style.setProperty("--mx", px*100 + "%");
+    card.style.setProperty("--my", py*100 + "%");
+    card.style.transform = `perspective(900px) rotateY(${(px-.5)*14}deg) rotateX(${-(py-.5)*14}deg)`;
+  });
+  card.addEventListener("mouseleave", () => card.style.transform = "perspective(900px)");
+});
+
+document.getElementById("form").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  location.href = "mailto:you@example.com?subject=" + encodeURIComponent("Portfolio message from " + f.get("name")) +
+    "&body=" + encodeURIComponent(f.get("message") + "\n\n— " + f.get("name") + " (" + f.get("email") + ")");
+});
+</script>
+</body>
+</html>
